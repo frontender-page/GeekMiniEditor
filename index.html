@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>GEEK_IDE_FINAL</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #0d1117; display: flex; flex-direction: column; height: 100vh; font-family: monospace; overflow: hidden; }
+        .bar { height: 45px; background: #161b22; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid #30363d; justify-content: space-between; }
+        .btn { background: #238636; color: white; border: none; padding: 7px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px; }
+        .main { display: flex; flex: 1; overflow: hidden; }
+        #e { flex: 1; background: #0d1117; color: #e6edf3; border: none; padding: 15px; font-size: 16px; outline: none; resize: none; border-right: 2px solid #30363d; }
+        #v { flex: 1; background: white; border: none; }
+    </style>
+</head>
+<body>
+
+    <div class="bar">
+        <div style="color: #58a6ff; font-weight: bold;">GEEK_IDE // v5.3</div>
+        <div>
+            <button class="btn" style="background:#1f6feb" onclick="showNew()">В ХРОМЕ</button>
+            <button class="btn" onclick="clean()">ОЧИСТИТЬ</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <textarea id="e" spellcheck="false" oninput="run()"></textarea>
+        <iframe id="v"></iframe>
+    </div>
+
+    <script>
+        const area = document.getElementById('e');
+        const view = document.getElementById('v');
+
+        // Функция вывода (с защитой от кракозябр)
+        function run() {
+            try {
+                const d = view.contentDocument || view.contentWindow.document;
+                d.open();
+                d.write('<meta charset="UTF-8">');
+                d.write(area.value);
+                d.close();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Очистка
+        function clean() {
+            if (confirm('Удалить код?')) {
+                area.value = '';
+                run();
+            }
+        }
+
+        // Новая вкладка
+        function showNew() {
+            const blob = new Blob(['<meta charset="UTF-8">' + area.value], { type: 'text/html' });
+            window.open(URL.createObjectURL(blob), '_blank');
+        }
+
+        // Табы и Автозакрытие
+        area.addEventListener('keydown', function(ev) {
+            if (ev.key === 'Tab') {
+                ev.preventDefault();
+                const s = this.selectionStart;
+                this.value = this.value.substring(0, s) + "  " + this.value.substring(this.selectionEnd);
+                this.selectionEnd = s + 2;
+                run();
+            }
+            if (ev.key === '>') {
+                setTimeout(function() {
+                    const p = area.selectionStart;
+                    const val = area.value.substring(0, p);
+                    const last = val.lastIndexOf('<');
+                    if (last !== -1) {
+                        const tag = val.substring(last + 1, p - 1).toLowerCase().trim();
+                        // Список тегов для закрытия
+                        const close = {
+                            'div': '</div>', 
+                            'p': '</p>', 
+                            'h1': '</h1>', 
+                            'style': '</style>', 
+                            'script': '</scr' + 'ipt>'
+                        };
+                        if (close[tag]) {
+                            area.value = val + close[tag] + area.value.substring(p);
+                            area.selectionStart = area.selectionEnd = p;
+                        }
+                    }
+                    run();
+                }, 10);
+            }
+        });
+
+        // Начальный запуск
+        area.value = "<h1>Привет!</h1>";
+        run();
+    </script>
+</body>
+</html>
