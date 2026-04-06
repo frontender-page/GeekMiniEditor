@@ -2,100 +2,156 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>GEEK_IDE_FINAL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GEEK_IDE_VUE</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; background: #0d1117; display: flex; flex-direction: column; height: 100vh; font-family: monospace; overflow: hidden; }
-        .bar { height: 45px; background: #161b22; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid #30363d; justify-content: space-between; }
-        .btn { background: #238636; color: white; border: none; padding: 7px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px; }
-        .main { display: flex; flex: 1; overflow: hidden; }
-        #e { flex: 1; background: #0d1117; color: #e6edf3; border: none; padding: 15px; font-size: 16px; outline: none; resize: none; border-right: 2px solid #30363d; }
-        #v { flex: 1; background: white; border: none; }
+        :root {
+            --bg-base: #181818;
+            --sidebar-bg: #252526;
+            --activity-bar-bg: #333333;
+            --status-blue: #007acc;
+            --border: #2b2b2b;
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            background: var(--bg-base); color: white;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            overflow: hidden; touch-action: none;
+        }
+
+        .layout { display: flex; flex-direction: column; height: 100vh; }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+
+        /* Activity Bar */
+        .activity-bar { width: 48px; background: var(--activity-bar-bg); display: flex; flex-direction: column; align-items: center; padding-top: 15px; border-right: 1px solid var(--border); }
+        .activity-bar i { font-size: 22px; color: #858585; margin-bottom: 25px; cursor: pointer; }
+        .activity-bar i.active { color: white; border-left: 2px solid white; width: 100%; text-align: center; }
+
+        /* Sidebar */
+        .sidebar { width: 220px; background: var(--sidebar-bg); border-right: 1px solid var(--border); }
+        .sidebar-title { padding: 10px 20px; font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; }
+        .file-item { padding: 8px 20px; font-size: 13px; color: #ccc; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .file-item.active { background: #37373d; color: white; }
+
+        /* Editor Area */
+        .editor-area { flex: 1; display: flex; flex-direction: column; position: relative; background: #1e1e1e; }
+        .tabs-bar { height: 35px; background: #252526; display: flex; border-bottom: 1px solid var(--border); }
+        .tab { min-width: 100px; padding: 0 15px; background: #1e1e1e; display: flex; align-items: center; gap: 8px; font-size: 12px; color: white; border-right: 1px solid var(--border); border-top: 1px solid var(--status-blue); }
+
+        /* РЕДАКТОР */
+        #editor { position: absolute; top: 35px; bottom: 0; left: 0; right: 0; font-size: 14px; opacity: 0; transition: opacity 0.3s; }
+        #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #888; }
+
+        /* Status Bar */
+        .status-bar { height: 22px; background: var(--status-blue); display: flex; justify-content: space-between; align-items: center; padding: 0 10px; font-size: 12px; }
+        .btn-live { background: #1e1e1e; border: none; color: white; padding: 2px 12px; cursor: pointer; border-radius: 2px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="bar">
-        <div style="color: #58a6ff; font-weight: bold;">GEEK_IDE // v5.3</div>
+<div class="layout">
+    <div class="main-container">
+        <nav class="activity-bar">
+            <i class="fa-regular fa-copy active"></i>
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <i class="fa-solid fa-code-branch"></i>
+            <i class="fa-solid fa-cog" style="margin-top: auto; margin-bottom: 10px;"></i>
+        </nav>
+
+        <aside class="sidebar">
+            <div class="sidebar-title">Explorer</div>
+            <div class="file-item active"><i class="fa-brands fa-vuejs" style="color:#42b883"></i> App.vue</div>
+            <div class="file-item"><i class="fa-brands fa-css3-alt" style="color:#264de4"></i> style.css</div>
+        </aside>
+
+        <main class="editor-area">
+            <div class="tabs-bar">
+                <div class="tab">App.vue</div>
+            </div>
+            <div id="loader">Загрузка редактора...</div>
+            <div id="editor"></div>
+        </main>
+    </div>
+
+    <footer class="status-bar">
+        <div><i class="fa-solid fa-code-branch"></i> main*</div>
         <div>
-            <button class="btn" style="background:#1f6feb" onclick="showNew()">В ХРОМЕ</button>
-            <button class="btn" onclick="clean()">ОЧИСТИТЬ</button>
+            <button class="btn-live" onclick="runProject()">📡 Go Live</button>
+            <span style="margin-left:10px">Vue.js Mode</span>
         </div>
-    </div>
+    </footer>
+</div>
 
-    <div class="main">
-        <textarea id="e" spellcheck="false" oninput="run()"></textarea>
-        <iframe id="v"></iframe>
-    </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 
-    <script>
-        const area = document.getElementById('e');
-        const view = document.getElementById('v');
-
-        // Функция вывода (с защитой от кракозябр)
-        function run() {
-            try {
-                const d = view.contentDocument || view.contentWindow.document;
-                d.open();
-                d.write('<meta charset="UTF-8">');
-                d.write(area.value);
-                d.close();
-            } catch (err) {
-                console.error(err);
-            }
+<script>
+    window.onload = function() {
+        if (typeof ace === 'undefined') {
+            document.getElementById('loader').innerText = "Ошибка: CDN не доступен. Проверь интернет.";
+            return;
         }
 
-        // Очистка
-        function clean() {
-            if (confirm('Удалить код?')) {
-                area.value = '';
-                run();
-            }
-        }
+        const editor = ace.edit("editor");
+        document.getElementById('editor').style.opacity = "1";
+        document.getElementById('loader').style.display = "none";
 
-        // Новая вкладка
-        function showNew() {
-            const blob = new Blob(['<meta charset="UTF-8">' + area.value], { type: 'text/html' });
-            window.open(URL.createObjectURL(blob), '_blank');
-        }
-
-        // Табы и Автозакрытие
-        area.addEventListener('keydown', function(ev) {
-            if (ev.key === 'Tab') {
-                ev.preventDefault();
-                const s = this.selectionStart;
-                this.value = this.value.substring(0, s) + "  " + this.value.substring(this.selectionEnd);
-                this.selectionEnd = s + 2;
-                run();
-            }
-            if (ev.key === '>') {
-                setTimeout(function() {
-                    const p = area.selectionStart;
-                    const val = area.value.substring(0, p);
-                    const last = val.lastIndexOf('<');
-                    if (last !== -1) {
-                        const tag = val.substring(last + 1, p - 1).toLowerCase().trim();
-                        // Список тегов для закрытия
-                        const close = {
-                            'div': '</div>', 
-                            'p': '</p>', 
-                            'h1': '</h1>', 
-                            'style': '</style>', 
-                            'script': '</scr' + 'ipt>'
-                        };
-                        if (close[tag]) {
-                            area.value = val + close[tag] + area.value.substring(p);
-                            area.selectionStart = area.selectionEnd = p;
-                        }
-                    }
-                    run();
-                }, 10);
-            }
+        editor.setTheme("ace/theme/one_dark");
+        editor.session.setMode("ace/mode/html"); // Vue лучше всего подсвечивается как HTML с вкраплениями JS
+        
+        // Включаем автозакрытие
+        editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true,
+            behavioursEnabled: true,
+            autoScrollEditorIntoView: true,
+            showPrintMargin: false,
+            wrap: true
         });
 
-        // Начальный запуск
-        area.value = "<h1>Привет!</h1>";
-        run();
-    </script>
+        // Начальный код с Vue.js
+        editor.setValue(`<div id="app">
+  <h1>{{ message }}</h1>
+  <button @click="reverseMessage">Развернуть текст</button>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"><\/script>
+
+<script>
+  const { createApp } = Vue
+  createApp({
+    data() {
+      return {
+        message: 'Привет, Vue в GEEK_IDE!'
+      }
+    },
+    methods: {
+      reverseMessage() {
+        this.message = this.message.split('').reverse().join('')
+      }
+    }
+  }).mount('#app')
+<\/script>
+
+<style>
+  body { background: #121212; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+  #app { text-align: center; border: 1px solid #42b883; padding: 20px; border-radius: 10px; }
+  button { background: #42b883; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+</style>`, -1);
+
+        window.runProject = function() {
+            const code = editor.getValue();
+            const win = window.open();
+            win.document.write(code);
+            win.document.close();
+        };
+
+        window.onresize = () => editor.resize();
+    };
+</script>
+
 </body>
 </html>
