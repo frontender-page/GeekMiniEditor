@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GEEK_IDE_VUE</title>
-    
+    <title>GEEK_IDE_VUE_SPLIT</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
     <style>
         :root {
             --bg-base: #181818;
@@ -26,47 +24,29 @@
         .layout { display: flex; flex-direction: column; height: 100vh; }
         .main-container { display: flex; flex: 1; overflow: hidden; }
 
-        /* Activity Bar */
+        /* Sidebar & Activity Bar - как в оригинале */
         .activity-bar { width: 48px; background: var(--activity-bar-bg); display: flex; flex-direction: column; align-items: center; padding-top: 15px; border-right: 1px solid var(--border); }
         .activity-bar i { font-size: 22px; color: #858585; margin-bottom: 25px; cursor: pointer; }
-        .activity-bar i.active { color: white; border-left: 2px solid white; width: 100%; text-align: center; }
+        .sidebar { width: 180px; background: var(--sidebar-bg); border-right: 1px solid var(--border); }
+        
+        /* РАЗДЕЛЕНИЕ ЭКРАНА */
+        .editor-split { flex: 1; display: flex; background: #1e1e1e; }
+        
+        /* Левая часть - Код */
+        .code-section { width: 50%; display: flex; flex-direction: column; border-right: 2px solid #333; position: relative; }
+        
+        /* Правая часть - Результат */
+        .preview-section { width: 50%; background: white; display: flex; flex-direction: column; }
+        .preview-header { background: #333; color: #aaa; padding: 5px 15px; font-size: 11px; text-transform: uppercase; }
+        #preview-iframe { flex: 1; border: none; background: white; }
 
-        /* Sidebar */
-        .sidebar { width: 220px; background: var(--sidebar-bg); border-right: 1px solid var(--border); }
-        .sidebar-title { padding: 10px 20px; font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; }
-        .file-item { padding: 8px 20px; font-size: 13px; color: #ccc; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-        .file-item.active { background: #37373d; color: white; }
-
-        /* Editor Area */
-        .editor-area { flex: 1; display: flex; flex-direction: column; position: relative; background: #1e1e1e; }
+        /* Контейнер для Ace */
+        #editor { flex: 1; font-size: 14px; }
         .tabs-bar { height: 35px; background: #252526; display: flex; border-bottom: 1px solid var(--border); }
-        .tab { min-width: 100px; padding: 0 15px; background: #1e1e1e; display: flex; align-items: center; gap: 8px; font-size: 12px; color: white; border-right: 1px solid var(--border); border-top: 1px solid var(--status-blue); }
+        .tab { padding: 0 15px; background: #1e1e1e; display: flex; align-items: center; font-size: 12px; border-top: 1px solid var(--status-blue); }
 
-        /* РЕДАКТОР */
-        #editor { position: absolute; top: 35px; bottom: 0; left: 0; right: 0; font-size: 14px; opacity: 0; transition: opacity 0.3s; }
-        #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #888; }
-
-        /* Status Bar */
         .status-bar { height: 22px; background: var(--status-blue); display: flex; justify-content: space-between; align-items: center; padding: 0 10px; font-size: 12px; }
-        .btn-live { background: #1e1e1e; border: none; color: white; padding: 2px 12px; cursor: pointer; border-radius: 2px; font-weight: bold; }
-        /* Окно предпросмотра */
-#preview-container {
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: white;
-    z-index: 9999;
-}
-#preview-iframe {
-    width: 100%; height: calc(100% - 40px);
-    border: none;
-}
-.close-preview {
-    height: 40px; background: #333; color: white;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-weight: bold;
-}
+        .btn-live { background: #fff; color: #000; border: none; padding: 2px 10px; cursor: pointer; font-weight: bold; border-radius: 2px; }
     </style>
 </head>
 <body>
@@ -74,115 +54,79 @@
 <div class="layout">
     <div class="main-container">
         <nav class="activity-bar">
-            <i class="fa-regular fa-copy active"></i>
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <i class="fa-solid fa-code-branch"></i>
+            <i class="fa-regular fa-copy"></i>
             <i class="fa-solid fa-cog" style="margin-top: auto; margin-bottom: 10px;"></i>
         </nav>
 
         <aside class="sidebar">
-            <div class="sidebar-title">Explorer</div>
-            <div class="file-item active"><i class="fa-brands fa-vuejs" style="color:#42b883"></i> App.vue</div>
-            <div class="file-item"><i class="fa-brands fa-css3-alt" style="color:#264de4"></i> style.css</div>
+            <div style="padding:10px; font-size:11px; color:#888;">EXPLORER</div>
+            <div style="padding:8px 20px; font-size:13px; color:#fff; background:#37373d;">App.vue</div>
         </aside>
 
-        <main class="editor-area">
-            <div class="tabs-bar">
-                <div class="tab">App.vue</div>
-            </div>
-            <div id="loader">Загрузка редактора...</div>
-            <div id="editor"></div>
+        <main class="editor-split">
+            <section class="code-section">
+                <div class="tabs-bar"><div class="tab">App.vue</div></div>
+                <div id="editor"></div>
+            </section>
+
+            <section class="preview-section">
+                <div class="preview-header">Live Preview</div>
+                <iframe id="preview-iframe"></iframe>
+            </section>
         </main>
     </div>
 
     <footer class="status-bar">
         <div><i class="fa-solid fa-code-branch"></i> main*</div>
         <div>
-            <button class="btn-live" onclick="runProject()">📡 Go Live</button>
-            <span style="margin-left:10px">Vue.js Mode</span>
+            <button class="btn-live" onclick="updatePreview()">⚡ Обновить</button>
         </div>
     </footer>
-</div>
-<div id="preview-container">
-    <div class="close-preview" onclick="closePreview()">✕ ЗАКРЫТЬ ПРЕДПРОСМОТР</div>
-    <iframe id="preview-iframe"></iframe>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 
 <script>
-    window.onload = function() {
-        if (typeof ace === 'undefined') {
-            document.getElementById('loader').innerText = "Ошибка: CDN не доступен. Проверь интернет.";
-            return;
-        }
-
-        const editor = ace.edit("editor");
-        document.getElementById('editor').style.opacity = "1";
-        document.getElementById('loader').style.display = "none";
-
-        editor.setTheme("ace/theme/one_dark");
-        editor.session.setMode("ace/mode/html"); // Vue лучше всего подсвечивается как HTML с вкраплениями JS
-        
-        // Включаем автозакрытие
-        editor.setOptions({
-            enableBasicAutocompletion: true,
-            enableLiveAutocompletion: true,
-            behavioursEnabled: true,
-            autoScrollEditorIntoView: true,
-            showPrintMargin: false,
-            wrap: true
-        });
-
-        // Начальный код с Vue.js
-        editor.setValue(`<div id="app">
-  <h1>{{ message }}</h1>
-  <button @click="reverseMessage">Развернуть текст</button>
+    const editor = ace.edit("editor");
+    editor.setTheme("ace/theme/one_dark");
+    editor.session.setMode("ace/mode/html");
+    
+    // Начальный код с Vue
+    editor.setValue(`<div id="app">
+  <h2 style="color: #42b883">{{ title }}</h2>
+  <p>Счётчик: {{ count }}</p>
+  <button @click="count++" style="padding:10px; cursor:pointer;">Добавить +1</button>
 </div>
 
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"><\/script>
-
 <script>
   const { createApp } = Vue
   createApp({
-    data() {
-      return {
-        message: 'Привет, Vue в GEEK_IDE!'
-      }
-    },
-    methods: {
-      reverseMessage() {
-        this.message = this.message.split('').reverse().join('')
-      }
-    }
+    data() { return { title: 'Привет, Брат!', count: 0 } }
   }).mount('#app')
-<\/script>
+<\/script>`, -1);
 
-<style>
-  body { background: #121212; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-  #app { text-align: center; border: 1px solid #42b883; padding: 20px; border-radius: 10px; }
-  button { background: #42b883; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
-</style>`, -1);
-window.runProject = function() {
-    const code = editor.getValue();
-    const container = document.getElementById('preview-container');
-    const iframe = document.getElementById('preview-iframe');
+    editor.setOptions({
+        behavioursEnabled: true,
+        wrap: true,
+        fontSize: "14px"
+    });
+
+    // Функция обновления превью
+    function updatePreview() {
+        const code = editor.getValue();
+        const iframe = document.getElementById('preview-iframe');
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(code);
+        doc.close();
+    }
+
+    // Обновляем при загрузке
+    window.onload = updatePreview;
     
-    container.style.display = 'block';
-    
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(code);
-    doc.close();
-};
-
-window.closePreview = function() {
-    document.getElementById('preview-container').style.display = 'none';
-};
-
-        window.onresize = () => editor.resize();
-    };
+    // Авто-ресайз редактора
+    window.onresize = () => editor.resize();
 </script>
-
 </body>
 </html>
