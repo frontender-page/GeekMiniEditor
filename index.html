@@ -49,6 +49,24 @@
         /* Status Bar */
         .status-bar { height: 22px; background: var(--status-blue); display: flex; justify-content: space-between; align-items: center; padding: 0 10px; font-size: 12px; }
         .btn-live { background: #1e1e1e; border: none; color: white; padding: 2px 12px; cursor: pointer; border-radius: 2px; font-weight: bold; }
+        /* Окно предпросмотра */
+#preview-container {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: white;
+    z-index: 9999;
+}
+#preview-iframe {
+    width: 100%; height: calc(100% - 40px);
+    border: none;
+}
+.close-preview {
+    height: 40px; background: #333; color: white;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-weight: bold;
+}
     </style>
 </head>
 <body>
@@ -84,6 +102,10 @@
             <span style="margin-left:10px">Vue.js Mode</span>
         </div>
     </footer>
+</div>
+<div id="preview-container">
+    <div class="close-preview" onclick="closePreview()">✕ ЗАКРЫТЬ ПРЕДПРОСМОТР</div>
+    <iframe id="preview-iframe"></iframe>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
@@ -141,13 +163,22 @@
   #app { text-align: center; border: 1px solid #42b883; padding: 20px; border-radius: 10px; }
   button { background: #42b883; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
 </style>`, -1);
+window.runProject = function() {
+    const code = editor.getValue();
+    const container = document.getElementById('preview-container');
+    const iframe = document.getElementById('preview-iframe');
+    
+    container.style.display = 'block';
+    
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(code);
+    doc.close();
+};
 
-        window.runProject = function() {
-            const code = editor.getValue();
-            const win = window.open();
-            win.document.write(code);
-            win.document.close();
-        };
+window.closePreview = function() {
+    document.getElementById('preview-container').style.display = 'none';
+};
 
         window.onresize = () => editor.resize();
     };
